@@ -8,23 +8,29 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 import os
 from dotenv import load_dotenv
+import time
 
-# Load environment
+# Load environment variables (API keys, etc.)
 load_dotenv("chatBot.env")
 
-# Initialize LLM
+# Initialize LLM with streaming enabled
 llm = ChatGroq(
     temperature=0,
-    model_name="llama3-70b-8192"
+    model_name="llama3-70b-8192",
+    streaming=True,
 )
 
-# Page layout
+# Set page config
 st.set_page_config(page_title="Your Chat bot", layout="wide")
-st.title("This is Your-Chat-Bot")
+st.title("📄 Your PDF Chatbot 🤖")
 
-# Upload PDF
-pdf_file = st.file_uploader("Upload a PDF", type=["pdf"])
+with open("styles.css") as f:
+    st.markdown(f"<style>{f.read()}</style", unsafe_allow_html=True)
 
+# Upload PDF file
+pdf_file = st.file_uploader("📎 Upload a PDF file", type=["pdf"])
+
+# Function to load and embed PDF content
 def load_vectorstore(uploaded_file):
     with open("temp.pdf", "wb") as f:
         f.write(uploaded_file.read())
@@ -40,34 +46,76 @@ def load_vectorstore(uploaded_file):
 
     return vectorstore
 
+# Process uploaded file
 if pdf_file is not None:
     vectorstore = load_vectorstore(pdf_file)
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=vectorstore.as_retriever(),  # ✅ Fix: Call the method
+        retriever=vectorstore.as_retriever(),
         memory=memory
     )
 else:
     st.warning("Please upload a PDF to get started.")
     st.stop()
 
-# App description
+# App introduction
 st.markdown("""
-This chatbot answers questions based on the **PDF file** using **Groq + LangChain**.  
-You can type your question or press the mic button to speak.
+Welcome! This chatbot answers questions based on the **PDF you uploaded** using **LangChain + Groq + LLaMA 3**.  
+Just type your question below to start chatting!
 """)
 
-# Text input
-user_input = st.text_input("Enter your question (or press mic to speak)")
-response_placeholder = st.empty()  # ✅ Fix: Add parentheses
+# Show uploaded filename
+st.write(f"✅ Loaded file: `{pdf_file.name}`")
 
-if st.button("Ask"):
-    if user_input.strip() == "":
-        st.warning("Please enter a question")
+# Text input
+user_input = st.text_input("💬 Ask something about your PDF:")
+
+# Response placeholder
+response_placeholder = st.empty()
+final_answer = ""
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history=[]
+
+
+# Streaming and typing effect
+if user_input.strip() != "":
+    st.session_state.chat_history.append({"role": "user", "message": user_input})
+    response_placeholder.markdown("<div class ='user-bubble'>🤔 Thinking...</div>",unsafe_allow_html=True)
+
+    for chunk in qa_chain.stream(
+        {"question": user_input},
+        config={"configurable": {"session_id": "user1"}}
+    ):
+        token = chunk.get("answer", "")
+        final_answer += token
+        response_placeholder.markdown(f"<div class='bot-bubble'>{final_answer}▌</div>", unsafe_allow_html=True)
+        time.sleep(0.02)
+        
+    # Final answer without cursor
+    response_placeholder.markdown(f"<div class='bot-bubble'>{final_answer}</div>", unsafe_allow_html=True)
+    st.session_state.chat_history.append({"role": "bot", "message": final_answer})
+
+
+for chat in st.session_state.chat_history:
+    if chat["role"] == "user":
+        st.markdown(
+            f"""
+            <div class="chat user">
+                <img src="user_icon.png" class="avatar">
+                <div class="bubble user-bubble">{chat["message"]}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
-        response_placeholder.write("Thinking...")
-        response = qa_chain.invoke({"question": user_input})
-        final_answer = response["answer"]
-        response_placeholder.write(final_answer)
+        st.markdown(
+            f"""
+            <div class="chat bot">
+                <img src="bot_icon.png" class="avatar">
+                <div class="bubble bot-bubble">{chat["message"]}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
