@@ -1,0 +1,71 @@
+/* Container for the entire chat area */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+    max-width: 800px;
+    margin: auto;
+}
+
+/* Each message block */
+.chat {
+    display: flex;
+    align-items: flex-end;
+}
+
+/* For user messages (right-aligned) */
+.chat.user {
+    justify-content: flex-end;
+}
+
+/* For bot messages (left-aligned) */
+.chat.bot {
+    justify-content: flex-start;
+}
+
+/* Common bubble styling */
+.bubble {
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 70%;
+    word-wrap: break-word;
+    font-family: Arial, sans-serif;
+}
+
+/* User message bubble */
+.user-bubble {
+    background-color: #dcf8c6;
+    color: black;
+    border-top-right-radius: 0;
+}
+
+/* Bot message bubble */
+.bot-bubble {
+    background-color: #f1f0f0;
+    color: black;
+    border-top-left-radius: 0;
+}
+
+/* Avatar image for user/bot */
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin: 0 10px;
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+    .bubble {
+        max-width: 90%;
+        font-size: 14px;
+    }
+
+    .avatar {
+        width: 28px;
+        height: 28px;
+    }
+}
