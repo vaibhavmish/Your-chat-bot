@@ -70,7 +70,7 @@ Just type your question below to start chatting!
 st.write(f"✅ Loaded file: `{pdf_file.name}`")
 
 # Text input
-user_input = st.text_input("💬 Ask something about your PDF:")
+user_input = st.chat_input("💬 Ask something about your PDF:")
 
 # Response placeholder
 response_placeholder = st.empty()
@@ -80,7 +80,7 @@ if "chat_history" not in st.session_state:
 
 
 # Streaming and typing effect
-if user_input.strip() != "":
+if user_input and user_input.strip() != "":
     st.session_state.chat_history.append({"role": "user", "message": user_input})
     response_placeholder.markdown("<div class ='user-bubble'>🤔 Thinking...</div>",unsafe_allow_html=True)
 
